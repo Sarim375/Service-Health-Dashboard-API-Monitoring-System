@@ -1,99 +1,85 @@
-# Service Health Dashboard & API Monitoring System
+# 🖥️ Service Health Dashboard & API Monitoring System
 
-## Note on Source Code Availability
-This project is a proprietary enterprise application developed for a financial technology company. Due to confidentiality and security agreements, the source code cannot be shared publicly. This repository serves as a portfolio showcase highlighting the system design, features, and business impact.
+![Java](https://img.shields.io/badge/Language-Java-orange.svg)
+![JSF](https://img.shields.io/badge/Frontend-JSF%20%2F%20PrimeFaces-blue.svg)
+![DB2](https://img.shields.io/badge/Database-IBM%20DB2%20%2F%20AS400-cyan.svg)
+![Status](https://img.shields.io/badge/Status-Production--Deployed-success.svg)
 
----
-
-## Overview
-This is a 24/7 Service Health and API Monitoring Dashboard built to monitor critical banking APIs in real time.
-
-The system functions as a central monitoring platform for production services, enabling operations teams to detect, analyze, and resolve issues before they impact users.
-
-I was responsible for the end-to-end development of this application, including system design, backend logic, frontend implementation, and monitoring workflows.
+## 🔒 Source Code Availability
+> [!IMPORTANT]
+> **Proprietary Software Notice**  
+> This project is a proprietary enterprise application developed for a financial technology organization. Due to confidentiality, security, and non-disclosure agreements, the source code cannot be shared publicly. This repository serves as a portfolio showcase highlighting the system architecture, features, business impact, and my development responsibilities.
 
 ---
 
-## Impact
+## 📋 Project Overview
 
-- Reduced API downtime through real-time polling and status tracking  
-- Shifted issue detection from reactive (customer-reported) to proactive monitoring  
-- Decreased incident identification and response time for operations teams  
-- Enabled flexible configuration of thresholds, polling intervals, and API-specific rules  
+This application is a **24/7 Service Health and API Monitoring Dashboard** built to monitor critical banking and transaction APIs in real time. 
 
----
+Operating as a centralized hub, it enables operations teams to proactively track system health, catch operational failures, and execute manual fail-safe overrides before outages impact external clients.
 
-## Core Features
-
-### Real-Time Monitoring
-- Continuous health checks with live status indicators  
-- Server-synced updates with controlled polling mechanisms  
-
-### Analytics and Metrics
-- Tracks API types (.NET, Java)  
-- Monitors transaction volumes, pending queues, and failure counts  
-
-### Alert System
-- Dynamic alerts triggered based on configurable limits such as:
-  - PENDING_LIMIT  
-  - FAILURE_LIMIT  
-  - Timeout conditions (STATUS_QUERY)  
-- Visual indicators for quick issue identification  
-
-### Operational Controls
-- Manual execution controls ("Run Now")  
-- Integration with a custom scheduler for restarting or resyncing jobs  
-
-### Log Viewer
-- Direct querying of backend logs from AS/400 Integrated File System via SQL  
-- Efficient rendering of large log datasets within the UI  
-
-### UI Capabilities
-- Global search and filtering  
-- Column toggling  
-- Real-time updates without page refresh  
+I was responsible for the **end-to-end design and development** of this system, including database integrations, background scheduler mechanisms, alerting rule engines, and the web dashboard interface.
 
 ---
 
-## System Architecture (High-Level)
+## 📈 System Architecture & Flow
 
-- Monitoring engine for API polling  
-- Custom scheduler for job execution and retries  
-- Database layer for storing API states and logs  
-- Web dashboard for real-time visualization  
+The following diagram illustrates the relationship between the dashboard, Java scheduler service, legacy AS/400 database host, and target APIs:
 
----
-
-## Tech Stack
-
-Backend:
-- Java  
-- DB2 / AS400 integration  
-
-Frontend:
-- JSF (JavaServer Faces)  
-- PrimeFaces  
-- CSS  
-
-Scheduling:
-- Custom Java-based job scheduler  
+```mermaid
+graph TD
+    UI[JSF / PrimeFaces Dashboard] <--> |SQL Queries & Controls| DB[(IBM DB2 on AS400)]
+    Scheduler[Java Job Scheduler Engine] -->|1. Poll API Status| TargetAPIs(Banking & Partner APIs)
+    Scheduler -->|2. Check Limits & Failures| Rules[Rule Engine: Threshold & Alert Checking]
+    Rules -->|3. Write Real-Time Status & Logs| DB
+    UI -->|Manual Trigger 'Run Now'| Scheduler
+    UI -->|Read System Logs| IFS[AS400 Integrated File System]
+```
 
 ---
 
-## Role and Responsibilities
+## 🚀 Key Business Impact
 
-- Designed and developed the system from scratch  
-- Implemented backend monitoring and polling logic  
-- Built frontend dashboard using JSF and PrimeFaces  
-- Developed custom scheduling and alert mechanisms  
-- Optimized performance for handling large logs and real-time updates  
-
----
-
-## Summary
-This project reflects experience in building enterprise-grade monitoring systems, working with legacy infrastructure, and delivering real-time dashboards for production environments.
+- **Proactive Mitigation**: Shifted monitoring from reactive (waiting for customer complaints) to proactive detection.
+- **Improved Recovery Times**: Reduced incident detection and response time for ops teams.
+- **Enhanced System Uptime**: Real-time status polling and automated job retries minimized downstream API timeouts.
+- **Operational Flexibility**: Allowed non-technical administrators to configure alert thresholds dynamically on the fly.
 
 ---
 
-## Disclaimer
-This repository is intended for demonstration purposes only. No proprietary source code is included.
+## ⚙️ Core Features & Technical Implementation
+
+### 1. Real-Time Monitoring Engine
+- Designed continuous health check workers with server-synced updates using PrimeFaces polling mechanisms.
+- Displays live status indicators (healthy, warning, failed) depending on system state.
+
+### 2. Alert & Rule Configuration
+- Developed a backend rules processor that flags warning levels based on configurable operational limits:
+  - `PENDING_LIMIT`: Queue backlogs.
+  - `FAILURE_LIMIT`: Continuous HTTP response failure count.
+  - `STATUS_QUERY`: Response timeout conditions.
+
+### 3. Log Viewer (Legacy Integration)
+- Implemented direct querying of large log datasets stored within the **AS/400 Integrated File System (IFS)** via SQL.
+- Optimized rendering parameters to display large volumes of text in the UI without browser slowdowns.
+
+### 4. Interactive Operations Control
+- Created an interface to trigger jobs manually ("Run Now").
+- Provided a management console for restarting or resyncing scheduler queues during API outages.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend UI** | JavaServer Faces (JSF) 2.x, PrimeFaces, CSS | Interactive widgets, polling, and data grid representation |
+| **Backend Core** | Java, Enterprise Beans | Core monitoring logic, REST callers, and rules engines |
+| **Database** | IBM DB2 / AS400 Integration | Relational table storage for configurations, states, and history |
+| **Scheduling** | Custom Java Multi-threaded Scheduler | Executes periodic async polling jobs |
+
+---
+
+## 📄 License
+
+This documentation and portfolio showcase outline are licensed under the MIT License - see the [LICENSE](file:///c:/Users/Sarim/Desktop/Project%20Development/Service-Health-Dashboard-API-Monitoring-System/LICENSE) file for details.
