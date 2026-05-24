@@ -82,4 +82,4 @@ graph TD
 
 ## 📄 License
 
-This documentation and portfolio showcase outline are licensed under the MIT License - see the [LICENSE](file:///c:/Users/Sarim/Desktop/Project%20Development/Service-Health-Dashboard-API-Monitoring-System/LICENSE) file for details.
+This documentation and portfolio showcase outline are licensed under the MIT License.
