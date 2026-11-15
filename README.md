@@ -1,85 +1,109 @@
-# 🖥️ Service Health Dashboard & API Monitoring System
+# Service Health Dashboard
 
-![Java](https://img.shields.io/badge/Language-Java-orange.svg)
-![JSF](https://img.shields.io/badge/Frontend-JSF%20%2F%20PrimeFaces-blue.svg)
-![DB2](https://img.shields.io/badge/Database-IBM%20DB2%20%2F%20AS400-cyan.svg)
-![Status](https://img.shields.io/badge/Status-Production--Deployed-success.svg)
+**A real-time operations dashboard that monitors the transaction health of many payment services from one screen, with configurable health checks, threshold alerting and in-browser log viewing.**
 
-## 🔒 Source Code Availability
-> [!IMPORTANT]
-> **Proprietary Software Notice**  
-> This project is a proprietary enterprise application developed for a financial technology organization. Due to confidentiality, security, and non-disclosure agreements, the source code cannot be shared publicly. This repository serves as a portfolio showcase highlighting the system architecture, features, business impact, and my development responsibilities.
+![Java](https://img.shields.io/badge/Java-8-orange?logo=openjdk)
+![JSF](https://img.shields.io/badge/JSF-2.2-blue)
+![PrimeFaces](https://img.shields.io/badge/PrimeFaces-UI-1f6feb)
+![Quartz](https://img.shields.io/badge/Quartz-Scheduler-6e40c9)
+![WebSphere](https://img.shields.io/badge/IBM-WebSphere-052FAD?logo=ibm)
+![DB2](https://img.shields.io/badge/IBM%20i-DB2-052FAD?logo=ibm)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?logo=microsoftsqlserver&logoColor=white)
 
----
-
-## 📋 Project Overview
-
-This application is a **24/7 Service Health and API Monitoring Dashboard** built to monitor critical banking and transaction APIs in real time. 
-
-Operating as a centralized hub, it enables operations teams to proactively track system health, catch operational failures, and execute manual fail-safe overrides before outages impact external clients.
-
-I was responsible for the **end-to-end design and development** of this system, including database integrations, background scheduler mechanisms, alerting rule engines, and the web dashboard interface.
+> **About this repository**
+> This project was built in a professional setting and its source code is the property of my employer. This repository is a **portfolio write-up only**: it contains no source code, no configuration and no internal system details. Names, figures and workflows are described at a general level.
 
 ---
 
-## 📈 System Architecture & Flow
+## Overview
 
-The following diagram illustrates the relationship between the dashboard, Java scheduler service, legacy AS/400 database host, and target APIs:
+Operations teams in a payments business need to know, at any moment, whether transactions are flowing through each backend service, whether failures or stuck transactions are building up, and whether the background jobs behind each service are still running.
+
+Before this dashboard, that meant running ad-hoc database queries across several platforms and often discovering problems late. I designed and built a **single live web dashboard** that checks every service automatically, highlights anything unhealthy, and lets operators investigate without leaving the browser.
+
+## My Role
+
+- Designed and built the application end to end: scheduling engine, data access, alerting logic and user interface.
+- Integrated two database platforms (IBM i DB2 and Microsoft SQL Server) behind one monitoring model.
+- Built a remote log viewer for very large server log files.
+- Re-targeted the application to an older Java and servlet level so it could run on the organisation's existing application server.
+
+## Key Features
+
+**Monitoring**
+- Each monitored service has its own scheduled health check with its own polling interval.
+- Results are classified into pending, successful and failed transactions, with the time of the latest transaction.
+- Optional job-liveness check per service (running or down).
+- Checks are routed to the correct database platform automatically.
+
+**Alerting**
+- **Critical (red)** when failures or pending transactions exceed a threshold, or when no transaction has arrived within a configured time window.
+- **Warning (yellow)** when the service's background job is down.
+- Unhealthy services are always pinned to the top of the table; sorting applies only to healthy rows.
+
+**Operations**
+- **Configuration-driven:** services and thresholds are defined as data, so adding or re-tuning a service needs no code change and no redeployment.
+- **Hot reload:** a refresh action re-reads the configuration and reschedules only what changed, while the application keeps running.
+- **Run Now** to trigger any check on demand.
+- **In-browser log viewer** showing the tail of a service's log file on the server, including files of 1 GB and larger.
+
+**User experience**
+- Auto-refresh every few seconds, paused automatically while a dialog is open.
+- Live search, column chooser, sortable headers, pagination, and switchable light and dark themes.
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Language | Java 8 |
+| Web | JSF 2.2 (Facelets), PrimeFaces, PrimeFlex |
+| Scheduling | Quartz Scheduler |
+| Application server | IBM WebSphere |
+| Databases | IBM i (AS/400) DB2, Microsoft SQL Server |
+| Data access | JDBC with container-managed connection pools |
+| IBM i services | System SQL services and QShell for server-side file access |
+
+## Architecture
 
 ```mermaid
-graph TD
-    UI[JSF / PrimeFaces Dashboard] <--> |SQL Queries & Controls| DB[(IBM DB2 on AS400)]
-    Scheduler[Java Job Scheduler Engine] -->|1. Poll API Status| TargetAPIs(Banking & Partner APIs)
-    Scheduler -->|2. Check Limits & Failures| Rules[Rule Engine: Threshold & Alert Checking]
-    Rules -->|3. Write Real-Time Status & Logs| DB
-    UI -->|Manual Trigger 'Run Now'| Scheduler
-    UI -->|Read System Logs| IFS[AS400 Integrated File System]
+flowchart LR
+    UI["Browser<br/>auto-refreshing table"] <-->|AJAX| App
+    subgraph App["Web application"]
+        State["Application state<br/>(live results per service)"]
+        Sched["Scheduler<br/>one job per service"]
+        Jobs["Health-check jobs"]
+        Logs["Log reader"]
+    end
+    Sched --> Jobs --> State
+    Jobs --> DB1[("IBM i DB2")]
+    Jobs --> DB2[("SQL Server")]
+    Logs --> FS[["Server log files"]]
 ```
 
----
+The design follows a layered MVC structure: presentation beans, a model that evaluates alert rules per service, a data-access layer for both databases and log files, and a scheduling service that owns job lifecycle.
 
-## 🚀 Key Business Impact
+## Engineering Highlights
 
-- **Proactive Mitigation**: Shifted monitoring from reactive (waiting for customer complaints) to proactive detection.
-- **Improved Recovery Times**: Reduced incident detection and response time for ops teams.
-- **Enhanced System Uptime**: Real-time status polling and automated job retries minimized downstream API timeouts.
-- **Operational Flexibility**: Allowed non-technical administrators to configure alert thresholds dynamically on the fly.
+- **Diff-based rescheduling.** On reload, the scheduler removes jobs for deleted services, recreates changed ones and adds new ones, without a restart. Along the way I diagnosed and worked around a scheduler behaviour that silently dropped triggers when jobs were replaced.
+- **Thread safety between worker and request threads.** Background jobs update shared state while web requests read it; atomic reference swaps, volatile counters and synchronized updates keep the view consistent.
+- **Resilient by design.** A failing query never stops a schedule: errors are logged, results fall back to safe defaults, and a broken liveness query cannot raise a false "down" alert.
+- **Time-zone-correct staleness detection.** Timestamps are read and compared in a consistent reference frame, removing off-by-hours false alarms.
+- **Constant-memory log tailing.** Small files are read directly; large files are tailed on the server so only the last few thousand lines cross the network, avoiding memory exhaustion and timeouts.
+- **Schema-tolerant checks.** Optional result columns are detected at runtime, so existing health checks keep working as new ones gain richer data.
+- **Legacy platform compatibility.** Down-levelled the application to Java 8 and an older servlet specification while keeping a modern UI component library.
 
----
+## Impact
 
-## ⚙️ Core Features & Technical Implementation
+- Replaced manual, multi-database checks with one live view across all monitored services.
+- Problems surface within seconds and are visually prioritised, rather than being found after customer complaints.
+- Reading production logs no longer requires terminal access or file transfers.
 
-### 1. Real-Time Monitoring Engine
-- Designed continuous health check workers with server-synced updates using PrimeFaces polling mechanisms.
-- Displays live status indicators (healthy, warning, failed) depending on system state.
+## Skills Demonstrated
 
-### 2. Alert & Rule Configuration
-- Developed a backend rules processor that flags warning levels based on configurable operational limits:
-  - `PENDING_LIMIT`: Queue backlogs.
-  - `FAILURE_LIMIT`: Continuous HTTP response failure count.
-  - `STATUS_QUERY`: Response timeout conditions.
-
-### 3. Log Viewer (Legacy Integration)
-- Implemented direct querying of large log datasets stored within the **AS/400 Integrated File System (IFS)** via SQL.
-- Optimized rendering parameters to display large volumes of text in the UI without browser slowdowns.
-
-### 4. Interactive Operations Control
-- Created an interface to trigger jobs manually ("Run Now").
-- Provided a management console for restarting or resyncing scheduler queues during API outages.
+`Java` · `JSF / PrimeFaces` · `Quartz Scheduler` · `IBM WebSphere` · `IBM i / AS/400` · `DB2` · `SQL Server` · `JDBC` · `Connection pooling` · `Concurrency` · `Real-time monitoring` · `Alerting` · `Observability` · `MVC` · `Payments domain`
 
 ---
 
-## 🛠️ Technology Stack
+**Sarim Nadeem** · MSc Computer Science · [LinkedIn](https://www.linkedin.com/in/msarimnadeem) · [GitHub](https://github.com/Sarim375)
 
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Frontend UI** | JavaServer Faces (JSF) 2.x, PrimeFaces, CSS | Interactive widgets, polling, and data grid representation |
-| **Backend Core** | Java, Enterprise Beans | Core monitoring logic, REST callers, and rules engines |
-| **Database** | IBM DB2 / AS400 Integration | Relational table storage for configurations, states, and history |
-| **Scheduling** | Custom Java Multi-threaded Scheduler | Executes periodic async polling jobs |
-
----
-
-## 📄 License
-
-This documentation and portfolio showcase outline are licensed under the MIT License.
+*Source code is proprietary and not available. Happy to discuss the design and engineering decisions in an interview.*
