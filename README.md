@@ -45,7 +45,7 @@ Before this dashboard, that meant running ad-hoc database queries across several
 - **Configuration-driven:** services and thresholds are defined as data, so adding or re-tuning a service needs no code change and no redeployment.
 - **Hot reload:** a refresh action re-reads the configuration and reschedules only what changed, while the application keeps running.
 - **Run Now** to trigger any check on demand.
-- **In-browser log viewer** showing the tail of a service's log file on the server, including files of 1 GB and larger.
+- **In-browser log viewer** showing the tail of a service's log file on the server, including very large, gigabyte-scale files.
 
 **User experience**
 - Auto-refresh every few seconds, paused automatically while a dialog is open.
